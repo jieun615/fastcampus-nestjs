@@ -3,11 +3,12 @@ import { ApiExtraModels, ApiTags } from '@nestjs/swagger';
 import { VideoService } from './video.service';
 import { CreateVideoReqDto, FindVideoReqDto } from './\bdto/req.dto';
 import { PageReqDto } from 'src/common/dto/req.dto';
-import { ApiGetResponse, ApiPostResponse } from 'src/common/decorator/swagger.decorator';
+import { ApiGetItemsResponse, ApiGetResponse, ApiPostResponse } from 'src/common/decorator/swagger.decorator';
 import { CreateVideoResDto, FindVideoResDto } from './\bdto/res.dto';
+import { PageResDto } from 'src/common/dto/res.dto';
 
 @ApiTags('Video')
-@ApiExtraModels(FindVideoReqDto, PageReqDto, CreateVideoResDto, FindVideoResDto)
+@ApiExtraModels(FindVideoReqDto, PageReqDto, CreateVideoResDto, FindVideoResDto, PageResDto)
 @Controller('api/videos')
 export class VideoController {
   constructor(private readonly videoService: VideoService) {}
@@ -18,6 +19,7 @@ export class VideoController {
     return this.videoService.create();
   }
 
+  @ApiGetItemsResponse(FindVideoResDto)
   @Get()
   findAll(@Query() { page, size }: PageReqDto) {
     return this.videoService.findAll();
