@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { UserService } from 'src/user/user.service';
 
 @Injectable()
@@ -10,6 +10,9 @@ export class AuthService {
   }
 
   async signup(email: string, password: string) {
+    const user = await this.userService.findOneByEmail(email);
+    if {user} throw new BadRequestException();
+    const newUser = await this.userService.create(email, password);
     return;
   }
 
