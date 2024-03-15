@@ -21,7 +21,7 @@ export class AuthController {
 
   @ApiPostResponse(SigninResDto)
   @Post('signin')
-  async signin(@Body() signinReqDto: SigninReqDto) {
-    return this.authService.signin({});
+  async signin(@Body() { email, password }: SigninReqDto) {
+    return this.authService.signin(email, password);
   }
 }
