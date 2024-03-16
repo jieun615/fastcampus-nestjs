@@ -5,6 +5,7 @@ import { UserService } from 'src/user/user.service';
 import { RefreshToken } from './entity/refresh-token.entity';
 import { DataSource, Repository } from 'typeorm';
 import { User } from 'src/user/entity/user.entity';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
@@ -14,10 +15,6 @@ export class AuthService {
     private jwtService: JwtService,
     @InjectRepository(RefreshToken) private refreshTokenRepository: Repository<RefreshToken>
   ) {}
-
-  async validateUser(email: string, password: string): Promise<any> {
-    return null;
-  }
 
   async signup(email: string, password: string) {
     const queryRunner = this.dataSource.createQueryRunner();
@@ -29,8 +26,11 @@ export class AuthService {
       const user = await this.userService.findOneByEmail(email);
       if (user) throw new BadRequestException();
 
-      const userEntity = queryRunner.manager.create(User, { email, password });
+      const saltRounds = 10;
+      const hash = await bcrypt.hash(password, saltRounds);
+      const userEntity = queryRunner.manager.create(User, { email, password: hash });
       await queryRunner.manager.save(userEntity);
+
       const accessToken = this.generateAccessToken(userEntity.id);
       const refreshToken = this.genereateRefreshToken(userEntity.id);
       const refreshTokenEntity = queryRunner.manager.create(RefreshToken, {
@@ -50,12 +50,7 @@ export class AuthService {
   }
 
   async signin(email: string, password: string) {
-    const user = await this.userService.findOneByEmail(email);
-    if (!user) throw new UnauthorizedException();
-
-    const isMatch = password == user.password;
-    if (!isMatch) throw new UnauthorizedException();
-
+    const user = await this.validateUser(email, password);
     const refreshToken = this.generateRepositoryToken(user.id);
     await this.createRefreshTokenUsingUser(user.id, refreshToken);
     return {
@@ -97,5 +92,15 @@ export class AuthService {
       refreshTokenEntity = this.refreshTokenRepository.create({ user: { id: userId }, token: refreshToken });
     }
     await this.refreshTokenRepository.save(refreshTokenEntity);
+  }
+
+  private async validateUser(email: string, password: string): Promise<User> {
+    const user = await this.userService.findOneByEmail(email);
+    if (!user) throw new UnauthorizedException();
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) throw new UnauthorizedException();
+
+    return user;
   }
 }

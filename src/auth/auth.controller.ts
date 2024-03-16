@@ -16,7 +16,7 @@ export class AuthController {
   @ApiPostResponse(SignupResDto)
   @Public()
   @Post('signup')
-  async signup(@Body() { email, password, passwordConfirm }: SignupResDto): Promise<SignupResDto> {
+  async signup(@Body() { email, password, passwordConfirm }: SignupReqDto): Promise<SignupResDto> {
     if (password !== passwordConfirm) throw new BadRequestException();
     const { id, accessToken, refreshToken } = await this.authService.signup(email, password);
     return { id, accessToken, refreshToken };
