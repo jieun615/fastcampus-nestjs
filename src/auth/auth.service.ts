@@ -38,6 +38,7 @@ export class AuthService {
         token: refreshToken,
       });
       await queryRunner.manager.save(refreshTokenEntity);
+      await queryRunner.commitTransaction();
       return { id: userEntity.id, accessToken, refreshToken };
     } catch (e) {
       await queryRunner.rollbackTransaction();
