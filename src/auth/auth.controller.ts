@@ -34,6 +34,7 @@ export class AuthController {
   @Post('refresh')
   async refresh(@Headers('authorization') authorization, @User() user: UserAfterAuth) {
     const token = /Bearer\s(.+)/.exec(authorization)[1];
-    await this.authService.refresh(token, user.id);
+    const { accessToken, refreshToken } = await this.authService.refresh(token, user.id);
+    return { accessToken, refreshToken };
   }
 }

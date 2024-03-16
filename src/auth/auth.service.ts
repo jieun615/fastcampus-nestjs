@@ -43,7 +43,7 @@ export class AuthService {
     const refreshTokenEntity = await this.refreshTokenRepository.findOneBy({ token });
     if (!refreshTokenEntity) throw new BadRequestException();
     const accessToken = this.generateAccessToken(userId);
-    const refreshToken = this.generateRefreshToken(userId);
+    const refreshToken = this.genereateRefreshToken(userId);
     refreshTokenEntity.token = refreshToken;
     await this.refreshTokenRepository.save(refreshTokenEntity);
     return { accessToken, refreshToken };
@@ -52,6 +52,11 @@ export class AuthService {
   private generateAccessToken(userId: string) {
     const payload = { sub: userId, tokenType: 'access' };
     return this.jwtService.sign(payload, { expiresIn: '1d' });
+  }
+
+  private genereateRefreshToken(userId: string) {
+    const payload = { sub: userId, tokenType: 'refresh' };
+    return this.jwtService.sign(payload, { expiresIn: '30d' });
   }
 
   private generateRepositoryToken(userId: string) {
