@@ -6,18 +6,24 @@ import { PageReqDto } from 'src/common/dto/req.dto';
 import { ApiGetItemsResponse, ApiGetResponse, ApiPostResponse } from 'src/common/decorator/swagger.decorator';
 import { CreateVideoResDto, FindVideoResDto } from './\bdto/res.dto';
 import { PageResDto } from 'src/common/dto/res.dto';
+import { User, UserAfterAuth } from 'src/common/decorator/user.decorator';
+import { CreateVideoCommand } from './command/create-video.command';
+import { CommandBus } from '@nestjs/cqrs';
 
 @ApiTags('Video')
 @ApiExtraModels(FindVideoReqDto, PageReqDto, CreateVideoResDto, FindVideoResDto, PageResDto)
 @Controller('api/videos')
 export class VideoController {
-  constructor(private readonly videoService: VideoService) {}
+  constructor(private readonly videoService: VideoService, private commandBus: CommandBus) {}
 
   @ApiBearerAuth()
   @ApiPostResponse(CreateVideoResDto)
   @Post()
-  upload(@Body() createVideoReqDto: CreateVideoReqDto) {
-    return this.videoService.create();
+  async upload(@Body() createVideoReqDto: CreateVideoReqDto, @User() user: UserAfterAuth): Promise<CreateVideoResDto> {
+    const { title, video } = createVideoReqDto;
+    const command = new CreateVideoCommand(user.id, title, 'video/mp4', 'mp4', Buffer.from(''));
+    const { id } = await this.commandBus.execute(command);
+    return { id, title };
   }
 
   @ApiBearerAuth()
