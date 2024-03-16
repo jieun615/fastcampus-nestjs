@@ -34,9 +34,24 @@ export class AuthService {
     const refreshToken = this.generateRepositoryToken(user.id);
     await this.createRefreshTokenUsingUser(user.id, refreshToken);
     return {
-      accessToken: this.jwtService.sign({ sub: user.id }),
+      accessToken: this.generateAccessToken(user.id),
       refreshToken,
     };
+  }
+
+  async refresh(token: string, userId: string) {
+    const refreshTokenEntity = await this.refreshTokenRepository.findOneBy({ token });
+    if (!refreshTokenEntity) throw new BadRequestException();
+    const accessToken = this.generateAccessToken(userId);
+    const refreshToken = this.generateRefreshToken(userId);
+    refreshTokenEntity.token = refreshToken;
+    await this.refreshTokenRepository.save(refreshTokenEntity);
+    return { accessToken, refreshToken };
+  }
+
+  private generateAccessToken(userId: string) {
+    const payload = { sub: userId, tokenType: 'access' };
+    return this.jwtService.sign(payload, { expiresIn: '1d' });
   }
 
   private generateRepositoryToken(userId: string) {
