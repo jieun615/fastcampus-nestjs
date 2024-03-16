@@ -8,13 +8,18 @@ import { CreateVideoResDto, FindVideoResDto } from './\bdto/res.dto';
 import { PageResDto } from 'src/common/dto/res.dto';
 import { User, UserAfterAuth } from 'src/common/decorator/user.decorator';
 import { CreateVideoCommand } from './command/create-video.command';
-import { CommandBus } from '@nestjs/cqrs';
+import { CommandBus, QueryBus } from '@nestjs/cqrs';
+import { FindVideosQuery } from './query/find-videos.query';
 
 @ApiTags('Video')
 @ApiExtraModels(FindVideoReqDto, PageReqDto, CreateVideoResDto, FindVideoResDto, PageResDto)
 @Controller('api/videos')
 export class VideoController {
-  constructor(private readonly videoService: VideoService, private commandBus: CommandBus) {}
+  constructor(
+    private readonly videoService: VideoService,
+    private commandBus: CommandBus,
+    private queryBus: QueryBus,
+  ) {}
 
   @ApiBearerAuth()
   @ApiPostResponse(CreateVideoResDto)
@@ -29,8 +34,19 @@ export class VideoController {
   @ApiBearerAuth()
   @ApiGetItemsResponse(FindVideoResDto)
   @Get()
-  findAll(@Query() { page, size }: PageReqDto) {
-    return this.videoService.findAll();
+  async findAll(@Query() { page, size }: PageReqDto): Promise<FindVideoResDto[]> {
+    const findVideosQuery = new FindVideosQuery(page, size);
+    const videos = await this.queryBus.execute(findVideosQuery);
+    return videos.map(({ id, title, user }) => {
+      return {
+        id,
+        title,
+        user: {
+          id: user.id,
+          email: user.email,
+        },
+      };
+    });
   }
 
   @ApiBearerAuth()
